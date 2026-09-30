@@ -9,11 +9,12 @@
 - [x] Generate the initial migration; validate lint, types and production build.
 - [x] Smoke-check the built app: home redirect, health response and Romanian dashboard empty states.
 
-Scaffold verification on 2026-09-30: `npm ci`, lint, typecheck, production build and HTTP smoke checks passed. `db:generate` reports no schema drift from the existing migration. PostgreSQL migration execution and live integrations remain unverified; no database or provider credentials are needed for these scaffold checks.
+Scaffold verification on 2026-09-30: `npm ci`, lint, typecheck, production build and HTTP smoke checks passed. `db:generate` reports no schema drift from the existing migration. Local Compose PostgreSQL 18.6 now runs the migration and passes `npm run db:test`; live integrations remain unverified.
 
 ## 1 — Tenant foundation
 
-- [ ] Apply migrations to development PostgreSQL and verify constraints against a real database.
+- [x] Add local Docker Compose with `postgres:latest`, persistent storage and a health check.
+- [x] Apply migrations to development PostgreSQL and verify constraints against a real database.
 - [ ] Choose authentication, implement login and server-resolved company membership.
 - [ ] Implement tenant-scoped repositories and cross-tenant access tests.
 - [ ] Provision one demo garage, owner, opening hours, three FAQs, diagnostic service and agent configuration.

@@ -19,16 +19,21 @@ Development and build scripts explicitly use Webpack. The same commands work on 
 
 ## Database
 
-Create a local PostgreSQL database named `voice_ai_saas`. Copy `.env.example` to `.env.local` and set `DATABASE_URL` to that database. Next.js and Drizzle both load `.env.local`. PostgreSQL installation/hosting is up to the development environment; no additional infrastructure is provisioned here.
+Start local PostgreSQL with Docker and Docker Compose. Copy `.env.example` to `.env.local` if that file does not exist yet. Its `DATABASE_URL` matches the development credentials in [compose.yaml](compose.yaml). Next.js, Drizzle and the database smoke tests load `.env.local`.
 
 ```sh
-npm run db:generate
+npm run db:up
 npm run db:migrate
+npm run db:test
 ```
 
-The initial SQL migration is checked into `drizzle/`; generate again only after schema changes. Inspect generated SQL before applying it. `npm run db:studio` opens Drizzle's local database browser. Do not point development commands at a production database.
+Compose runs `postgres:latest` at `127.0.0.1:5432`, creates `voice_ai_saas`, and waits for the database health check. The app runs on the host using `npm run dev`. Database files persist in the `postgres_data` named volume mounted at `/var/lib/postgresql`, following the [official image layout for PostgreSQL 18+](https://github.com/docker-library/docs/blob/master/postgres/content.md#pgdata).
 
-The migration matches the Drizzle schema, but has not been applied or tested against PostgreSQL in this workspace yet.
+`npm run db:down` stops and removes the container while retaining its data volume. To fetch a newer image explicitly, run `docker compose pull postgres` before starting it. Because `latest` can move to another PostgreSQL major version, a future major upgrade needs a database migration or dump/restore; changing the image does not upgrade stored data.
+
+The initial SQL migration is checked into `drizzle/`; run `npm run db:generate` only after schema changes. `npm run db:studio` opens Drizzle's local database browser.
+
+Verified locally against PostgreSQL 18.6: migration application, all 13 tables, Romanian text/JSON/timestamp round-trips, tenant foreign keys, deduplication keys and lifecycle constraints. `db:test` uses a transaction and rolls back all fixtures, including on failure. It accepts only a loopback `voice_ai_saas` database. These are database constraint checks; authentication, booking orchestration and live providers are still future work.
 
 ## Verify
 
