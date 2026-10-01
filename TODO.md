@@ -20,20 +20,26 @@ Scaffold verification on 2026-09-30: `npm ci`, lint, typecheck, production build
 - [ ] Implement tenant-scoped repositories and cross-tenant access tests.
 - [ ] Provision one demo business, owner, opening hours, three FAQs, bookable service and agent configuration.
 - [x] Add protected company reads.
-- [ ] Add simple company configuration editing.
+- [x] Add owner reception configuration editing (greeting, instructions, hours, one service and up to three FAQs).
+
+Call and reception repositories now enforce company scope; database and browser tests check inaccessible call details and settings. General appointment repositories remain for the booking increment. The demo business must still be configured with the user's actual information and enabled number.
 
 Pam.ai verification on 2026-10-01: migrations, lint, TypeScript, production build, all 12 authentication test results, all 10 database test results, 3 generic intake tests and the Chromium end-to-end flow passed. The rebrand covers the UI, metadata and authentication emails. Optional request details replace mandatory vehicle data; migration tests verify historical data preservation. Local SMTP delivery was verified through Mailpit. Production SMTP and deployment still need validation in their target environment.
 
 ## 2 — Real call and FAQ slice
 
 - [ ] Spike Romanian number routing and choose the first telephony adapter; verify transfer support.
-- [ ] Add a persistent Node entry point around Next.js with graceful shutdown and session cleanup.
-- [ ] Implement signed webhook verification, number-to-company routing, event deduplication and call lifecycle handling.
-- [ ] Implement OpenAI Realtime voice adapter and server-side session/tool event loop.
-- [ ] Build Romanian instructions from company data; expose validated intake and business-information tools.
-- [ ] Persist finalized transcript, caller details, duration and post-call summary.
-- [ ] Show authenticated recent calls and call details using stored data.
+- [x] Add a persistent Node entry point around Next.js with graceful shutdown and session cleanup.
+- [x] Implement signed webhook verification, number-to-company routing, event deduplication and call lifecycle handling.
+- [x] Implement OpenAI Realtime voice adapter and server-side session/tool event loop.
+- [x] Build Romanian instructions from company data; expose validated intake and business-information tools.
+- [x] Persist finalized transcript, caller details, duration and a summary of confirmed intake.
+- [x] Show authenticated recent calls and call details using stored data.
 - [ ] Prove a real handset call answers a stored FAQ and captures caller information.
+
+The implemented transport is Twilio Programmable Voice `<Dial><Sip>` to OpenAI with a signed routing token, rather than a direct Elastic SIP Trunk. Setup is in [docs/first-call.md](docs/first-call.md). Tests use local PostgreSQL, signed webhooks and simulated provider transport. Live audio, account/model access, Romanian number routing and transfer remain unverified; OpenAI credentials and public HTTPS are not yet configured.
+
+Validation on 2026-10-01: 15 voice test results, authentication/database/intake tests, lint, TypeScript and production build passed. Chromium verified saved reception settings, stored call/transcript display and tenant isolation on port 3100 while preserving the existing server on port 3000.
 
 ## 3 — Booking and transfer: first complete demo
 

@@ -8,15 +8,15 @@ One npm package and one Next.js App Router application. Keep use cases in featur
 src/
   app/                       # Pages, layouts, thin HTTP adapters
     api/health/              # Process liveness only
-    dashboard/               # Initial dashboard shell
+    dashboard/               # Reception settings, stored calls and transcripts
   modules/
     companies/               # Company configuration and input schemas
     calls/                   # Call lifecycle and caller intake contracts
     appointments/            # Availability and booking contracts
-    receptionist/            # Conversation tools and orchestration (next slice)
+    receptionist/            # Romanian instructions, tools and session lifecycle
   providers/
-    voice/                   # VoiceProvider port; OpenAI adapter comes later
-    telephony/               # TelephonyProvider port; chosen adapter comes later
+    voice/                   # VoiceProvider port and OpenAI SIP adapter
+    telephony/               # Generic port and Twilio SIP routing adapter
     calendar/                # CalendarProvider port; Google adapter comes later
   db/
     schema/                  # Drizzle table definitions
@@ -25,6 +25,7 @@ src/
 drizzle/                     # Reviewed, versioned SQL migrations
 docs/                        # Decisions, database proposal, demo acceptance
 TODO.md                      # Ordered implementation roadmap
+scripts/serve.ts              # Persistent Node host around Next.js and voice webhooks
 ```
 
 Do not add empty service/repository wrappers. Introduce a module's service and repository when implementing its first use case. Modules depend on provider interfaces; only the future composition root selects concrete adapters. Provider SDK types must stay inside adapters. Tenant context is an explicit use-case argument, resolved from authenticated membership or a verified incoming number mapping.
@@ -33,9 +34,11 @@ Do not add empty service/repository wrappers. Introduce a module's service and r
 
 Pam.ai serves businesses across industries. Core intake captures a caller's name, callback number and request; optional `details` hold relevant business context. Services, FAQs, opening hours and reception instructions belong to each company. The core flow must not require automotive fields or assume a particular industry. The first release remains Romanian-speaking; industry neutrality does not imply multilingual support or every industry's scheduling workflow.
 
-Use PostgreSQL for durable application state. Next.js serves the dashboard and HTTP endpoints. The voice integration needs a persistent connection for events and tool calls. Plan a long-lived Node host for the monolith; before the voice milestone, add a small Node entry point that hosts Next.js and owns call sessions. Do not rely on fire-and-forget work in a route handler or assume a short-lived serverless function can own a call. This entry point is planned, not part of this scaffold.
+Use PostgreSQL for durable application state. `scripts/serve.ts` hosts Next.js and owns call sessions in a persistent Node process. It intercepts the Twilio/OpenAI webhook paths and delegates to receptionist use cases. Both `npm run dev` and `npm start` use this host. Without complete voice configuration, the web app works and voice endpoints return 503. Do not substitute a short-lived serverless function or a bare Next.js server for this host.
 
-Evaluate a SIP route to OpenAI first; retain a media-stream bridge as the alternative if the selected carrier requires it. OpenAI documents inbound SIP acceptance and a WebSocket control connection in its [Realtime SIP guide](https://developers.openai.com/api/docs/guides/voice-sip). This supports the runtime choice above; carrier routing, Romanian number availability, transfer behavior, and model selection still need a real call spike. No vendor is chosen by this scaffold.
+The first transport is Twilio Programmable Voice SIP to OpenAI Realtime, with a WebSocket control connection as described in the [Realtime SIP guide](https://developers.openai.com/api/docs/guides/voice-sip). Twilio's signed incoming webhook resolves an enabled account/number mapping, persists the call once, and produces TwiML with a short-lived HMAC routing token. OpenAI's signed webhook must present this token before the session can bind to that call. A SIP caller cannot choose a tenant by supplying a number or company ID. Carrier routing, Romanian number availability, audio quality and transfer behavior still need a live call spike.
+
+The runtime holds a PostgreSQL advisory lock on a dedicated connection so one process owns a Twilio account. It persists provider/session identifiers, bounds concurrent sessions and call duration, serializes transcript/tool writes, and tries to reattach persisted sessions on restart. Failed recovery and graceful shutdown terminate the carrier call. No external voice requests are made unless all provider settings are present.
 
 ```mermaid
 flowchart LR
@@ -49,7 +52,7 @@ flowchart LR
 
 Adapters normalize incoming events after signature verification over the original request bytes. Map provider account plus called number to a company; never trust a webhook or model-supplied company ID. Store provider event IDs and handle retries/out-of-order lifecycle events. Voice tool arguments pass Zod validation; the server injects company and call IDs and checks allowed actions.
 
-The ports are initial contracts to validate during the carrier spike. For direct SIP, the OpenAI incoming-call webhook and the carrier's call identifier may differ: the composition layer must correlate them using verified routing configuration. Keep transfer orchestration behind `TelephonyProvider`, even if its SIP implementation delegates REFER to the voice transport. A transfer request being accepted does not prove that a human answered. Implement only the chosen transport first; a media-stream bridge will need explicit audio transport capabilities when introduced.
+The generic telephony port remains a proposed contract for later transfer support. The selected Twilio SIP adapter adds TwiML routing and raw request verification. The carrier identifier and OpenAI call identifier are correlated through the verified routing token. A transfer request being accepted does not prove that a human answered. Transfer and a media-stream bridge remain unimplemented.
 
 ## Scheduling assumptions
 
@@ -65,6 +68,6 @@ Phone and calendar configurations store credential references only. Start with s
 
 ## Current implementation boundary
 
-The application includes email/password authentication, verification/reset emails, company onboarding, membership checks, Zod contracts, provider ports and versioned SQL migrations. Provider adapters, webhooks, booking orchestration, live transcripts and production deployment remain planned. Follow `TODO.md` in order.
+The application includes authentication, company onboarding, owner reception settings, Twilio/OpenAI SIP adapters, signed webhooks, Romanian information/intake tools, call persistence and protected transcript pages. Local protocol/database/browser validation is distinct from live handset validation. Booking, human transfer and production deployment remain planned. See `docs/first-call.md` for setup and `TODO.md` for remaining acceptance checks.
 
 Framework setup follows the [Next.js installation guide](https://nextjs.org/docs/app/getting-started/installation); database tooling follows the [Drizzle PostgreSQL guide](https://orm.drizzle.team/docs/get-started/postgresql-new).

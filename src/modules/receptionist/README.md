@@ -1,5 +1,5 @@
 # Receptionist module
 
-The next slice introduces call orchestration here. Compose company context, voice session events and validated business tools using provider ports. Keep prompts and booking decisions out of Next.js route handlers and provider adapters.
+`conversation.ts` builds Romanian instructions from company configuration and validates business-information and confirmed caller-intake tools. `runtime.ts` owns Twilio/OpenAI webhook orchestration, bounded sessions, transcript writes, recovery and shutdown. The persistent Node composition root is `scripts/serve.ts`.
 
-Planned tools: business information lookup, caller intake, availability, confirmed booking and human transfer. Inject company/call IDs from the server session; validate every tool payload; derive booking idempotency keys from persisted invocation IDs. Do not let the model select credentials, tenant scope or arbitrary transfer numbers.
+Availability, confirmed booking and human transfer remain planned. Inject company/call IDs from the verified server session, validate tool payloads and derive idempotency keys from persisted invocation IDs. The model cannot select credentials, tenant scope or arbitrary transfer numbers. Setup and live-call validation: `docs/first-call.md`.

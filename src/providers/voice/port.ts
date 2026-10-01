@@ -19,6 +19,7 @@ export interface VoiceProvider {
   startSession(input: {
     tenant: TenantContext;
     callId: string;
+    startedAt: Date;
     connectionToken: string;
     instructions: string;
     model: string;

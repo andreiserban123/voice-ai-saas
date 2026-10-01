@@ -6,9 +6,9 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "node --import tsx scripts/serve.ts --dev",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "node --import tsx scripts/serve.ts",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "db:up": "docker compose up -d --wait postgres",
@@ -17,6 +17,8 @@
     "auth:test": "node --conditions=react-server --import tsx --test scripts/auth.test.ts",
     "auth:e2e": "playwright test",
     "intake:test": "node --import tsx --test scripts/intake.test.ts",
+    "voice:test": "node --import tsx --test scripts/voice.test.ts",
+    "voice:check": "node --import tsx scripts/voice-check.ts",
     "db:down": "docker compose down",
     "db:test": "node --test scripts/db-smoke.test.mjs",
     "db:generate": "drizzle-kit generate",
@@ -31,23 +33,31 @@
     "drizzle-orm": "0.45.3",
     "next": "16.3.7",
     "nodemailer": "10.0.13",
+    "openai": "7.25.0",
     "pg": "8.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "0.0.1",
+    "tsx": "4.23.15",
+    "twilio": "6.1.2",
+    "ws": "8.22.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "22.20.4",
     "@types/nodemailer": "8.0.2",
     "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "@types/ws": "^8.18.2",
+    "daisyui": "^5.7.47",
     "drizzle-kit": "0.31.11",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.7",
-    "tsx": "4.23.15",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.9.3"
   }
 }

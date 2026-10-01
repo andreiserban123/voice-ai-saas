@@ -8,8 +8,8 @@ export function SignOutButton() {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
-  return <div>
-    <button className="secondary-button" disabled={pending} onClick={async () => {
+  return <div className="flex flex-col gap-2">
+    <button className="btn btn-ghost btn-sm border border-base-300" disabled={pending} onClick={async () => {
       setPending(true);
       setError(false);
       try {
@@ -20,6 +20,6 @@ export function SignOutButton() {
       } catch { setError(true); }
       finally { setPending(false); }
     }}>{pending ? "Se deconectează…" : "Ieși din cont"}</button>
-    {error && <p role="alert">Deconectarea a eșuat. Încearcă din nou.</p>}
+    {error && <p className="text-sm text-error" role="alert">Deconectarea a eșuat. Încearcă din nou.</p>}
   </div>;
 }

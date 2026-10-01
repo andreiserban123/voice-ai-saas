@@ -2,9 +2,11 @@
 
 AI receptionist for businesses that need help answering calls, sharing information and managing appointments: TypeScript, Next.js App Router, PostgreSQL, Drizzle and Zod in a modular monolith.
 
-**Current state:** email/password authentication with Better Auth, email verification, password reset, persistent sessions and company onboarding are implemented. `/dashboard` requires a verified account and resolves company membership on the server. Calls and bookings still show empty states; `/api/health` reports process liveness. Remaining work and validation status are tracked in [TODO.md](TODO.md).
+**Current state:** email/password authentication, verification/reset emails, company onboarding and owner reception settings are implemented. Twilio Programmable Voice SIP and OpenAI Realtime are integrated through a persistent Node host. The protected dashboard reads stored calls and transcripts; bookings remain planned. Live handset audio remains unverified until credentials and public HTTPS are configured. See [first-call setup](docs/first-call.md) and [TODO.md](TODO.md).
 
-Pam.ai is industry-neutral: each business supplies its own services, hours, FAQs and reception instructions. Caller intake requires contact details and a reason for the call; additional context is optional. The first voice and booking integrations remain planned.
+Pam.ai is industry-neutral: each business supplies its own services, hours, FAQs and reception instructions. Caller intake requires contact details and a reason for the call; additional context is optional. Booking and human transfer remain planned.
+
+The interface uses Tailwind CSS and daisyUI with custom light and dark themes. The header toggle remembers the browser's preference; new visitors follow their system theme. Dashboard, authentication, reception settings and call transcripts share responsive cards and accessible form components.
 
 ## Run locally
 
@@ -21,7 +23,7 @@ Before starting, copy `.env.example` to `.env.local` if it does not exist. Set `
 
 Open http://localhost:3000/signup, create an account, then open the verification email in http://localhost:8025 (Mailpit). After verification, sign in and enter your business name. Use the exact origin in `AUTH_URL` when opening the app. `services:up` starts PostgreSQL and Mailpit; `services:down` stops them while retaining the database volume. Local email stays in Mailpit.
 
-Development and build scripts explicitly use Webpack. The same commands work on Linux, macOS, and Windows; no platform-specific setup is required by the scaffold.
+Development and build explicitly use Webpack. `dev` and `start` launch the persistent Node host around Next.js. Without voice credentials the web app remains available and voice webhooks return 503. See [first-call setup](docs/first-call.md) for provider credentials and HTTPS routing.
 
 ## Database
 
@@ -61,6 +63,7 @@ npm run typecheck
 npm run auth:test
 npm run db:test
 npm run intake:test
+npm run voice:test
 npm run build
 npx playwright install chromium
 npm run auth:e2e
@@ -70,13 +73,15 @@ On Linux/WSL, Chromium also needs system libraries. Install them once with `npx 
 
 Verified on 2026-10-01: migrations, lint, TypeScript, production build, 12 authentication test results, 10 database test results, 3 generic intake tests and the Chromium/Mailpit end-to-end flow all passed. The browser flow also checks Pam.ai branding in page metadata and authentication emails. Migration checks confirm that historical JSON remains intact and appointments can omit additional details.
 
+First-call increment verified on 2026-10-01: 15 voice test results passed with signed webhooks, PostgreSQL and simulated Realtime transport, including call limits, shutdown and restart recovery. The production build and Chromium/Mailpit flow passed; Chromium also checks saved reception settings and protected call/transcript pages. Live phone audio remains unverified without provider credentials and public HTTPS.
+
 `auth:test` exercises the real database with temporary fixtures: signup, verification, password hashing, cookies, session expiry/revocation, tenant isolation, concurrent onboarding, CSRF, reset tokens and concurrent rate limits across authentication instances. It removes only its own fixtures.
 
 `intake:test` checks contact validation, caller confirmation and optional context for salons, consultations and other services. `db:test` also verifies the upgrade from the original vehicle fields without losing existing records.
 
-`auth:e2e` starts the production build on port 3000, which must be free. Keep PostgreSQL and Mailpit running and use the local defaults from `.env.example`. The Chromium test covers the visible forms, SMTP messages, verification links, onboarding, protected company reads, logout and password reset, then removes its own database fixtures and emails using the [Mailpit API](https://mailpit.axllent.org/docs/api-v1/). Browser screenshots on failure are ignored by Git. Test discovery alone does not validate these flows.
+`auth:e2e` starts the production build on port 3000, which must be free. Set `E2E_PORT` to another free port when needed; the test's auth origin follows that port. Keep PostgreSQL and Mailpit running and use the local defaults from `.env.example`. Chromium checks authentication, owner reception settings, stored call/transcript pages and tenant isolation, then removes its own fixtures and emails through the [Mailpit API](https://mailpit.axllent.org/docs/api-v1/). Screenshots on failure are ignored by Git.
 
-Run `npm start` after building for normal use. The future live-call runtime will need persistent session handling, as described in the architecture proposal.
+Run `npm start` after building for normal use. Both `dev` and `start` own voice sessions; run one process per Twilio account. Restart after changing server credentials. Keep the deployment's runtime dependencies, including `tsx`, installed; a bare Next.js server does not host the voice webhooks.
 
 Tooling notes: ESLint 9 is pinned because the React plugins bundled with this Next.js version fail under ESLint 10; npm marks ESLint 9 deprecated. The dependency audit reports four moderate findings in Drizzle Kit's transitive development tooling (`esbuild`), with no runtime dependency findings at scaffold creation. Track compatible upgrades in the roadmap; the suggested forced downgrade is not applied.
 
@@ -85,6 +90,7 @@ Tooling notes: ESLint 9 is pinned because the React plugins bundled with this Ne
 - [Architecture and repository structure](docs/architecture.md)
 - [Initial database schema](docs/database.md)
 - [Minimum end-to-end demo](docs/first-demo.md)
+- [First phone call: setup and validation](docs/first-call.md)
 - [Implementation roadmap](TODO.md)
 
 Routes handle HTTP concerns; business use cases belong in `src/modules`. Vendor implementations belong behind `src/providers/*/port.ts`. All tenant data access must resolve membership or verified inbound routing and include company scope.
