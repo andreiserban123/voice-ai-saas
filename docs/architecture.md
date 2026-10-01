@@ -1,4 +1,4 @@
-# Architecture proposal
+# Pam.ai architecture
 
 ## Repository
 
@@ -31,6 +31,8 @@ Do not add empty service/repository wrappers. Introduce a module's service and r
 
 ## Runtime and voice
 
+Pam.ai serves businesses across industries. Core intake captures a caller's name, callback number and request; optional `details` hold relevant business context. Services, FAQs, opening hours and reception instructions belong to each company. The core flow must not require automotive fields or assume a particular industry. The first release remains Romanian-speaking; industry neutrality does not imply multilingual support or every industry's scheduling workflow.
+
 Use PostgreSQL for durable application state. Next.js serves the dashboard and HTTP endpoints. The voice integration needs a persistent connection for events and tool calls. Plan a long-lived Node host for the monolith; before the voice milestone, add a small Node entry point that hosts Next.js and owns call sessions. Do not rely on fire-and-forget work in a route handler or assume a short-lived serverless function can own a call. This entry point is planned, not part of this scaffold.
 
 Evaluate a SIP route to OpenAI first; retain a media-stream bridge as the alternative if the selected carrier requires it. OpenAI documents inbound SIP acceptance and a WebSocket control connection in its [Realtime SIP guide](https://developers.openai.com/api/docs/guides/voice-sip). This supports the runtime choice above; carrier routing, Romanian number availability, transfer behavior, and model selection still need a real call spike. No vendor is chosen by this scaffold.
@@ -51,18 +53,18 @@ The ports are initial contracts to validate during the carrier spike. For direct
 
 ## Scheduling assumptions
 
-The first garage has one appointment calendar with capacity one. Appointments represent vehicle intake slots, not workshop bay or mechanic scheduling. Use a fixed service duration, local business hours in `Europe/Bucharest`, UTC instants in PostgreSQL, and half-open intervals `[start, end)`. Split overnight hours across two days; an absent weekday means closed. Multiple opening windows per day are supported. Date-specific closures are deferred to the MVP configuration milestone.
+The first business has one appointment calendar with capacity one. Appointments represent a bookable service such as a consultation or a salon visit. Multi-staff, room and resource scheduling are later extensions. Use the configured service duration, business hours in the company timezone (default `Europe/Bucharest`), UTC instants in PostgreSQL, and half-open intervals `[start, end)`. Split overnight hours across two days; an absent weekday means closed. Multiple opening windows per day are supported. Date-specific closures are deferred to the MVP configuration milestone.
 
 Availability combines business hours, local pending/confirmed bookings, and Google busy intervals. Serialize local booking attempts per company and recheck availability under the lock. Persist a pending booking with an idempotency key before the external write; reconcile using a stable external event ID. Only confirm verbally after Google confirms. A calendar API write is not a database transaction: timeout/retry recovery must query the existing event before creating another. External manual calendar edits can still race; document that limitation and reconcile conflicts. The scaffold does not implement booking or overlap enforcement yet.
 
 ## Tenancy and credentials
 
-Use shared tables with `company_id` on tenant-owned rows and composite foreign keys for tenant-owned references. All repository queries must include tenant scope; composite keys prevent cross-company links but do not authorize reads. Authentication and membership checks are required before exposing real data. The current dashboard contains no tenant data. RLS can be added later if the deployment needs a second isolation layer.
+Use shared tables with `company_id` on tenant-owned rows and composite foreign keys for tenant-owned references. All repository queries must include tenant scope; composite keys prevent cross-company links but do not authorize reads. Authentication and membership checks are required before exposing real data. The current dashboard displays the authenticated company and checks membership before company reads. RLS can be added later if the deployment needs a second isolation layer.
 
 Phone and calendar configurations store credential references only. Start with server environment secrets for the single-company demo; add protected per-company OAuth token storage for the pilot. Never expose provider secrets through `NEXT_PUBLIC_*`, prompts, or logs. Keep caller details on calls and appointments; a separate customer/CRM module is outside scope. Recording audio is outside the initial demo.
 
-## Scaffold boundary
+## Current implementation boundary
 
-This task adds documentation, a compilable application shell, Zod contracts, provider ports, Drizzle schema and generated SQL. It does not implement auth, tenant queries, provider adapters, webhooks, booking, live transcripts, or a production deployment. Follow `TODO.md` in order.
+The application includes email/password authentication, verification/reset emails, company onboarding, membership checks, Zod contracts, provider ports and versioned SQL migrations. Provider adapters, webhooks, booking orchestration, live transcripts and production deployment remain planned. Follow `TODO.md` in order.
 
 Framework setup follows the [Next.js installation guide](https://nextjs.org/docs/app/getting-started/installation); database tooling follows the [Drizzle PostgreSQL guide](https://orm.drizzle.team/docs/get-started/postgresql-new).

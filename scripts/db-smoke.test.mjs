@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import nextEnv from "@next/env";
 import pg from "pg";
@@ -35,8 +36,8 @@ test("local PostgreSQL migration and constraints", async (t) => {
     await client.query("BEGIN");
     await client.query("SET LOCAL statement_timeout = '5s'");
     const runId = randomUUID();
-    const a = await row("INSERT INTO companies (name, slug) VALUES ('Atelier Ștefan', $1) RETURNING *", [`smoke-a-${runId}`]);
-    const b = await row("INSERT INTO companies (name, slug) VALUES ('Atelier B', $1) RETURNING *", [`smoke-b-${runId}`]);
+    const a = await row("INSERT INTO companies (name, slug) VALUES ('Studio Ștefan', $1) RETURNING *", [`smoke-a-${runId}`]);
+    const b = await row("INSERT INTO companies (name, slug) VALUES ('Cabinet B', $1) RETURNING *", [`smoke-b-${runId}`]);
     const phone = await row(`INSERT INTO phone_configurations
       (company_id, provider, provider_account_id, phone_number, credential_reference)
       VALUES ($1, 'test', $2, '+40000000000', 'test-only') RETURNING id`, [a.id, runId]);
@@ -44,18 +45,18 @@ test("local PostgreSQL migration and constraints", async (t) => {
       (company_id, phone_configuration_id, telephony_provider, provider_account_id, provider_call_id,
        caller_name, started_at, ended_at, duration_seconds, summary, appointment_outcome)
       VALUES ($1, $2, 'test', $3, 'call-1', 'Ștefan Țurcanu',
-       '2026-09-30T09:00:00+03:00', '2026-09-30T09:02:00+03:00', 120, 'Verificare frâne', 'booked')
+       '2026-09-30T09:00:00+03:00', '2026-09-30T09:02:00+03:00', 120, 'Consultație inițială', 'booked')
       RETURNING *`, [a.id, phone.id, runId]);
     const service = await row(`INSERT INTO services (company_id, name, duration_minutes)
-      VALUES ($1, 'Diagnoză', 60) RETURNING id`, [a.id]);
+      VALUES ($1, 'Consultație', 60) RETURNING id`, [a.id]);
     const calendar = await row(`INSERT INTO calendar_connections
       (company_id, external_calendar_id, credential_reference)
       VALUES ($1, 'test-calendar', 'test-only') RETURNING id`, [a.id]);
     const appointment = await row(`INSERT INTO appointments
       (company_id, call_id, service_id, calendar_connection_id, caller_name, caller_phone,
-       vehicle, issue, starts_at, ends_at, idempotency_key, status, external_event_id)
+       details, issue, starts_at, ends_at, idempotency_key, status, external_event_id)
       VALUES ($1, $2, $3, $4, 'Ștefan Țurcanu', '+40722123456',
-       '{"make":"Dacia","model":"Logan"}', 'Verificare frâne',
+       '{"appointmentType":"Consultație","firstVisit":true}', 'Consultație inițială',
        '2026-10-01T10:00:00+03:00', '2026-10-01T11:00:00+03:00', 'booking-1', 'confirmed', 'event-1')
       RETURNING *`, [a.id, call.id, service.id, calendar.id]);
     const transcript = await row(`INSERT INTO transcript_entries
@@ -65,15 +66,25 @@ test("local PostgreSQL migration and constraints", async (t) => {
       (company_id, call_id, provider, provider_account_id, provider_event_id, event_type)
       VALUES ($1, $2, 'test', $3, 'webhook-1', 'incoming') RETURNING id`, [a.id, call.id, runId]);
 
-    await t.test("Romanian text, vehicle JSON and UTC instants round-trip", () => {
+    await t.test("Romanian text, details JSON and UTC instants round-trip", () => {
       assert.equal(a.timezone, "Europe/Bucharest");
       assert.equal(a.locale, "ro-RO");
       assert.equal(call.caller_name, "Ștefan Țurcanu");
       assert.equal(call.duration_seconds, 120);
       assert.equal(call.started_at.toISOString(), "2026-09-30T06:00:00.000Z");
       assert.equal(appointment.starts_at.toISOString(), "2026-10-01T07:00:00.000Z");
-      assert.deepEqual(appointment.vehicle, { make: "Dacia", model: "Logan" });
+      assert.deepEqual(appointment.details, { appointmentType: "Consultație", firstVisit: true });
       assert.equal(transcript.text, "Bună ziua, aș dori o programare.");
+    });
+
+    await t.test("booking requires no industry-specific details", async () => {
+      const generic = await row(`INSERT INTO appointments
+        (company_id, call_id, service_id, calendar_connection_id, caller_name, caller_phone,
+         issue, starts_at, ends_at, idempotency_key)
+        VALUES ($1, $2, $3, $4, 'Ana Popescu', '+40722123457', 'Prima vizită',
+          '2026-10-01T12:00:00+03:00', '2026-10-01T13:00:00+03:00', 'generic-booking')
+        RETURNING details`, [a.id, call.id, service.id, calendar.id]);
+      assert.deepEqual(generic.details, {});
     });
 
     await t.test("cross-company call, transcript and event links are rejected", async () => {
@@ -114,9 +125,9 @@ test("local PostgreSQL migration and constraints", async (t) => {
     await t.test("booking retries cannot duplicate a request or external event", async () => {
       const copyBooking = `INSERT INTO appointments
         (company_id, call_id, service_id, calendar_connection_id, caller_name, caller_phone,
-         vehicle, issue, starts_at, ends_at, idempotency_key, external_event_id)
+         details, issue, starts_at, ends_at, idempotency_key, external_event_id)
         SELECT company_id, call_id, service_id, calendar_connection_id, caller_name, caller_phone,
-         vehicle, issue, starts_at, ends_at, $1, $2 FROM appointments WHERE id = $3`;
+         details, issue, starts_at, ends_at, $1, $2 FROM appointments WHERE id = $3`;
       await reject("appointment_request_unique", "23505", copyBooking, ["booking-1", "event-2", appointment.id]);
       await reject("appointment_external_event_unique", "23505", copyBooking, ["booking-2", "event-1", appointment.id]);
     });
@@ -133,6 +144,23 @@ test("local PostgreSQL migration and constraints", async (t) => {
         (company_id, weekday, opens_at, closes_at) VALUES ($1, 1, '17:00', '09:00')`, [a.id]);
       await reject("call_duration_check", "23514", "UPDATE calls SET duration_seconds = -1 WHERE id = $1", [call.id]);
       await reject("call_ended_check", "23514", "UPDATE calls SET ended_at = started_at - interval '1 second' WHERE id = $1", [call.id]);
+    });
+
+    await t.test("Pam.ai migrations preserve historical JSON and optional call context", async () => {
+      // Temporary tables shadow public tables only in this connection. Exercise
+      // the real upgrade SQL against legacy rows; the outer rollback removes them.
+      await client.query("CREATE TEMP TABLE appointments (vehicle jsonb NOT NULL) ON COMMIT DROP");
+      await client.query("CREATE TEMP TABLE calls (vehicle jsonb) ON COMMIT DROP");
+      const legacy = { make: "Dacia", model: "Logan", registration: "B-01-TEST" };
+      await client.query("INSERT INTO appointments (vehicle) VALUES ($1)", [JSON.stringify(legacy)]);
+      await client.query("INSERT INTO calls (vehicle) VALUES ($1), (NULL)", [JSON.stringify(legacy)]);
+      for (const file of ["0002_thick_blink.sql", "0003_wise_madame_hydra.sql"]) {
+        await client.query(await readFile(new URL(`../drizzle/${file}`, import.meta.url), "utf8"));
+      }
+      assert.deepEqual((await row("SELECT details FROM appointments")).details, legacy);
+      assert.deepEqual((await row("SELECT details FROM calls WHERE details IS NOT NULL")).details, legacy);
+      assert.equal((await row("SELECT count(*)::int AS count FROM calls WHERE details IS NULL")).count, 1);
+      assert.deepEqual((await row("INSERT INTO appointments DEFAULT VALUES RETURNING details")).details, {});
     });
   } finally {
     // No test fixtures survive either successful or failed runs.

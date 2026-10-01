@@ -3,7 +3,7 @@ import {
   bigint, boolean, check, foreignKey, index, integer, jsonb, pgEnum,
   pgTable, primaryKey, text, time, timestamp, unique, uniqueIndex, uuid,
 } from "drizzle-orm/pg-core";
-import type { Vehicle } from "@/lib/validation";
+import type { RequestDetails } from "@/lib/validation";
 
 const id = () => uuid("id").defaultRandom().primaryKey();
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow().notNull();
@@ -181,7 +181,7 @@ export const calls = pgTable("calls", {
   voiceSessionId: text("voice_session_id"),
   callerPhone: text("caller_phone"),
   callerName: text("caller_name"),
-  vehicle: jsonb("vehicle").$type<Vehicle>(),
+  details: jsonb("details").$type<RequestDetails>(),
   issue: text("issue"),
   status: callStatus("status").default("ringing").notNull(),
   appointmentOutcome: appointmentOutcome("appointment_outcome").default("not_requested").notNull(),
@@ -228,7 +228,7 @@ export const appointments = pgTable("appointments", {
   calendarConnectionId: uuid("calendar_connection_id").notNull(),
   callerName: text("caller_name").notNull(),
   callerPhone: text("caller_phone").notNull(),
-  vehicle: jsonb("vehicle").$type<Vehicle>().notNull(),
+  details: jsonb("details").$type<RequestDetails>().default({}).notNull(),
   issue: text("issue").notNull(),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),

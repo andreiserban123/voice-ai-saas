@@ -3,8 +3,8 @@ import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Recepție AI | Service auto",
-  description: "Recepționer vocal pentru service-uri auto din România.",
+  title: "Pam.ai | Recepționera AI pentru afacerea ta",
+  description: "Pam.ai, recepționera AI pentru afacerea ta: apeluri, informații și programări într-un singur loc.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -12,7 +12,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ro">
       <body>
         <header className="site-header">
-          <Link className="brand" href="/dashboard">Recepție <span>AI</span></Link>
+          <Link className="brand" href="/dashboard">Pam<span>.ai</span></Link>
           <span className="badge">În configurare</span>
         </header>
         <main>{children}</main>

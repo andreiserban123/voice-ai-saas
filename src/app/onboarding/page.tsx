@@ -10,10 +10,10 @@ export default async function OnboardingPage() {
   const companies = await listUserCompanies(getDb(), session.user.id);
   if (companies.length) redirect("/dashboard");
   return <section className="panel auth-panel">
-    <h1>Adaugă service-ul tău</h1>
-    <p>Vei putea configura programul, serviciile și recepția telefonică pentru atelierul tău.</p>
+    <h1>Adaugă afacerea ta</h1>
+    <p>Vei putea configura programul, serviciile și recepția telefonică pentru afacerea ta.</p>
     <OnboardingForm />
-    <p className="field-help">Dacă faci parte dintr-un service existent, cere proprietarului să îți acorde acces.</p>
+    <p className="field-help">Dacă faci parte dintr-o afacere deja înregistrată, cere proprietarului să îți acorde acces.</p>
     <SignOutButton />
   </section>;
 }

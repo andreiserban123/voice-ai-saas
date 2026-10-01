@@ -1,5 +1,5 @@
 {
-  "name": "voice-ai-saas",
+  "name": "pam-ai",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -16,6 +16,7 @@
     "services:down": "docker compose --profile mail down",
     "auth:test": "node --conditions=react-server --import tsx --test scripts/auth.test.ts",
     "auth:e2e": "playwright test",
+    "intake:test": "node --import tsx --test scripts/intake.test.ts",
     "db:down": "docker compose down",
     "db:test": "node --test scripts/db-smoke.test.mjs",
     "db:generate": "drizzle-kit generate",

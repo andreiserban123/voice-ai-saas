@@ -26,7 +26,7 @@ test("database authentication and tenant authorization", async (t) => {
   const auth = createAuth(db, { secret, baseURL: origin, sendEmail: async (message) => { outbox.push(message); } });
   const runId = randomUUID();
   const emails = [`owner-${runId}@example.test`];
-  const password = `Garage original password ${runId}`;
+  const password = `Business original password ${runId}`;
   const companyIds: string[] = [];
   const ipPrefix = `198.19.${randomInt(1, 255)}.`;
   let ipCount = 1;
@@ -90,7 +90,7 @@ test("database authentication and tenant authorization", async (t) => {
 
     await t.test("concurrent onboarding creates one company and owner membership", async () => {
       const ids = await Promise.all([
-        onboardCompany(auth, db, sessionHeaders(cookie), { name: "Atelier Ștefan", userId: randomUUID(), role: "member" }),
+        onboardCompany(auth, db, sessionHeaders(cookie), { name: "Studio Ștefan", userId: randomUUID(), role: "member" }),
         onboardCompany(auth, db, sessionHeaders(cookie), { name: "Duplicate request" }),
       ]);
       assert.equal(ids[0], ids[1]);
@@ -106,7 +106,7 @@ test("database authentication and tenant authorization", async (t) => {
     await t.test("tenant and owner checks reject foreign IDs, role escalation and revoked membership", async () => {
       const foreign = randomUUID();
       companyIds.push(foreign);
-      await pool.query("INSERT INTO companies (id, name, slug) VALUES ($1, 'Other garage', $2)", [foreign, `foreign-${runId}`]);
+      await pool.query("INSERT INTO companies (id, name, slug) VALUES ($1, 'Other business', $2)", [foreign, `foreign-${runId}`]);
       await assert.rejects(requireCompanyAccess(auth, db, sessionHeaders(cookie), foreign), expectAccessError(404));
       await assert.rejects(requireCompanyAccess(auth, db, sessionHeaders(cookie), "invalid"), expectAccessError(404));
       await pool.query("UPDATE company_memberships SET role = 'member' WHERE company_id = $1 AND user_id = $2", [companyId, ownerId]);
@@ -178,7 +178,7 @@ test("database authentication and tenant authorization", async (t) => {
     });
 
     await t.test("HTTPS deployment uses Secure session cookies", async () => {
-      const secureOrigin = "https://receptie.example.test";
+      const secureOrigin = "https://pam.example.test";
       const secureAuth = createAuth(db, { secret, baseURL: secureOrigin, sendEmail: async () => {} });
       const response = await secureAuth.handler(new Request(`${secureOrigin}/api/auth/sign-in/email`, {
         method: "POST", headers: { "Content-Type": "application/json", origin: secureOrigin, "x-real-ip": nextIp() },

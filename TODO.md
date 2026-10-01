@@ -18,11 +18,11 @@ Scaffold verification on 2026-09-30: `npm ci`, lint, typecheck, production build
 - [x] Choose authentication, implement login and server-resolved company membership.
 - [x] Validate authentication against PostgreSQL and Chromium/Mailpit, including concurrent rate limits, session revocation and tenant isolation.
 - [ ] Implement tenant-scoped repositories and cross-tenant access tests.
-- [ ] Provision one demo garage, owner, opening hours, three FAQs, diagnostic service and agent configuration.
+- [ ] Provision one demo business, owner, opening hours, three FAQs, bookable service and agent configuration.
 - [x] Add protected company reads.
 - [ ] Add simple company configuration editing.
 
-Authentication verification on 2026-10-01: migrations, lint, TypeScript, production build, all 12 authentication test results, all 8 database test results and the Chromium end-to-end flow passed. Local SMTP delivery was verified through Mailpit. Production SMTP and deployment still need validation in their target environment.
+Pam.ai verification on 2026-10-01: migrations, lint, TypeScript, production build, all 12 authentication test results, all 10 database test results, 3 generic intake tests and the Chromium end-to-end flow passed. The rebrand covers the UI, metadata and authentication emails. Optional request details replace mandatory vehicle data; migration tests verify historical data preservation. Local SMTP delivery was verified through Mailpit. Production SMTP and deployment still need validation in their target environment.
 
 ## 2 — Real call and FAQ slice
 
@@ -57,4 +57,4 @@ Authentication verification on 2026-10-01: migrations, lint, TypeScript, product
 
 ## Explicitly outside this MVP
 
-Mobile app, CRM, Kafka, Kubernetes, microservices, complex analytics, mechanic/bay scheduling, payments, outbound campaigns and audio recording.
+Mobile app, CRM, Kafka, Kubernetes, microservices, complex analytics, multi-resource scheduling, payments, outbound campaigns and audio recording.

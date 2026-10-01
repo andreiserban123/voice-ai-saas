@@ -14,7 +14,7 @@ export function createAuth(db: ReturnType<typeof getDb>, options: {
   sendEmail: (message: AuthEmail) => Promise<void>;
 }) {
   return betterAuth({
-    appName: "Recepție AI",
+    appName: "Pam.ai",
     secret: options.secret,
     baseURL: options.baseURL,
     trustedOrigins: [new URL(options.baseURL).origin],
@@ -38,7 +38,7 @@ export function createAuth(db: ReturnType<typeof getDb>, options: {
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => options.sendEmail({
         to: user.email,
-        subject: "Resetează parola — Recepție AI",
+        subject: "Resetează parola — Pam.ai",
         text: `Pentru a alege o parolă nouă, deschide acest link în următoarele 30 de minute:\n${url}\n\nDacă nu ai cerut resetarea, ignoră acest mesaj.`,
       }),
     },
@@ -49,7 +49,7 @@ export function createAuth(db: ReturnType<typeof getDb>, options: {
       expiresIn: 60 * 60,
       sendVerificationEmail: async ({ user, url }) => options.sendEmail({
         to: user.email,
-        subject: "Confirmă adresa de email — Recepție AI",
+        subject: "Confirmă adresa de email — Pam.ai",
         text: `Confirmă adresa ta de email în următoarea oră:\n${url}\n\nDacă nu ai creat acest cont, ignoră acest mesaj.`,
       }),
     },

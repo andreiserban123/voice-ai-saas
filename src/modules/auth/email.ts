@@ -17,5 +17,5 @@ export async function sendAuthEmail(message: AuthEmail) {
     connectionTimeout: 10_000,
     socketTimeout: 15_000,
   });
-  await transport.sendMail({ ...message, from: env.SMTP_FROM });
+  await transport.sendMail({ ...message, from: { name: "Pam.ai", address: env.SMTP_FROM } });
 }

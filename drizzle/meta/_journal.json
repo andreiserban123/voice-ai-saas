@@ -15,6 +15,20 @@
       "when": 1790767548201,
       "tag": "0001_stale_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790834790190,
+      "tag": "0002_thick_blink",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790834830016,
+      "tag": "0003_wise_madame_hydra",
+      "breakpoints": true
     }
   ]
 }

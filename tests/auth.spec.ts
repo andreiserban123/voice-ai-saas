@@ -14,7 +14,7 @@ test("signup, SMTP verification, onboarding, tenant access, logout and password 
   const pool = new Pool({ connectionString: databaseURL.toString(), connectionTimeoutMillis: 5000 });
   const runId = randomUUID();
   const email = `browser-${runId}@example.test`;
-  const password = `Atelier test password ${runId}`;
+  const password = `Business test password ${runId}`;
   const newPassword = `${password} changed`;
   const ip = `198.18.${randomInt(1, 255)}.${randomInt(1, 255)}`;
   const companyIds: string[] = [];
@@ -34,7 +34,8 @@ test("signup, SMTP verification, onboarding, tenant access, logout and password 
     }, { timeout: 15_000, message: "Authentication email arrives in local Mailpit" }).toBe(true);
     const response = await request.get(`${mailpit}/api/v1/message/${id}`);
     expect(response.ok()).toBeTruthy();
-    const message = await response.json() as { Text: string };
+    const message = await response.json() as { Text: string; From: { Name: string } };
+    expect(message.From.Name).toBe("Pam.ai");
     const link = message.Text.match(/https?:\/\/\S+/)?.[0];
     expect(link).toBeTruthy();
     expect(new URL(link!).origin).toBe("http://localhost:3000");
@@ -52,6 +53,8 @@ test("signup, SMTP verification, onboarding, tenant access, logout and password 
     await pool.query("SELECT 1");
     await page.goto("/dashboard");
     await expect(page).toHaveURL(/\/login$/);
+    await expect(page).toHaveTitle("Pam.ai | Recepționera AI pentru afacerea ta");
+    await expect(page.getByRole("link", { name: "Pam.ai", exact: true })).toBeVisible();
     expect((await request.get(`/api/companies/${randomUUID()}`)).status()).toBe(401);
 
     await page.getByRole("link", { name: "Creează un cont", exact: true }).click();
@@ -64,16 +67,16 @@ test("signup, SMTP verification, onboarding, tenant access, logout and password 
 
     await login(password);
     await expect(page.getByRole("alert").filter({ hasText: "Confirmă adresa de email" })).toBeVisible();
-    await page.goto(await emailLink("Confirmă adresa de email — Recepție AI"));
+    await page.goto(await emailLink("Confirmă adresa de email — Pam.ai"));
     await expect(page.getByRole("status")).toContainText("Email confirmat");
     await login(password);
     await expect(page).toHaveURL(/\/onboarding$/);
-    await page.getByLabel("Numele service-ului").fill("Atelier Ștefan Browser");
-    await page.getByRole("button", { name: "Creează service-ul", exact: true }).click();
+    await page.getByLabel("Numele afacerii").fill("Studio Ștefan Browser");
+    await page.getByRole("button", { name: "Adaugă afacerea", exact: true }).click();
     await expect(page).toHaveURL(/\/dashboard\?company=/);
     const companyId = new URL(page.url()).searchParams.get("company")!;
     companyIds.push(companyId);
-    await expect(page.getByText("Atelier Ștefan Browser", { exact: true })).toBeVisible();
+    await expect(page.getByText("Studio Ștefan Browser", { exact: true })).toBeVisible();
     const ownCompany = await context.request.get(`/api/companies/${companyId}`);
     expect(ownCompany.status()).toBe(200);
     expect(ownCompany.headers()["cache-control"]).toBe("private, no-store");
@@ -98,7 +101,7 @@ test("signup, SMTP verification, onboarding, tenant access, logout and password 
     await page.getByLabel("Email", { exact: true }).fill(email);
     await page.getByRole("button", { name: "Trimite linkul de resetare" }).click();
     await expect(page.getByRole("status")).toContainText("vei primi un link de resetare");
-    const resetLink = await emailLink("Resetează parola — Recepție AI");
+    const resetLink = await emailLink("Resetează parola — Pam.ai");
     await page.goto(resetLink);
     await expect(page).toHaveURL(/\/reset-password\?token=/);
     await page.getByLabel("Parola nouă", { exact: true }).fill(newPassword);
@@ -113,7 +116,7 @@ test("signup, SMTP verification, onboarding, tenant access, logout and password 
     await expect(page.getByRole("alert").filter({ hasText: "Emailul sau parola nu sunt corecte" })).toBeVisible();
     await login(newPassword);
     await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByText("Atelier Ștefan Browser", { exact: true })).toBeVisible();
+    await expect(page.getByText("Studio Ștefan Browser", { exact: true })).toBeVisible();
     expect(pageErrors).toEqual([]);
   } finally {
     try {

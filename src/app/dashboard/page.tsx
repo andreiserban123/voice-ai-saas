@@ -23,16 +23,16 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         <p><strong>{access.company.name}</strong> · {session.user.name}</p>
         <SignOutButton />
       </div>
-      {companies.length > 1 && <nav className="auth-links" aria-label="Service-uri">
+      {companies.length > 1 && <nav className="auth-links" aria-label="Afaceri">
         {companies.map((company) => <Link key={company.id} href={`/dashboard?company=${company.id}`} aria-current={company.id === companyId ? "page" : undefined}>{company.name}</Link>)}
       </nav>}
       <section className="intro">
-        <p className="eyebrow">SERVICE AUTO · RECEPȚIE TELEFONICĂ</p>
-        <h1>Mai mult timp pentru atelier.</h1>
-        <p>Apelurile și programările service-ului, într-un singur loc.</p>
+        <p className="eyebrow">PAM.AI · RECEPȚIE TELEFONICĂ</p>
+        <h1>Mai mult timp pentru afacerea ta.</h1>
+        <p>Apelurile și programările afacerii tale, într-un singur loc.</p>
       </section>
       <aside className="notice">
-        <strong>Recepționerul nu este încă activ.</strong>
+        <strong>Pam nu este încă activă.</strong>
         <p>Configurarea companiei, a numărului de telefon și a calendarului urmează. Această pagină nu afișează încă date reale.</p>
       </aside>
       <div className="grid">
@@ -49,11 +49,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           <div className="empty">
             <span className="symbol" aria-hidden="true">◷</span>
             <h3>Un calendar mai ușor de urmărit</h3>
-            <p>Programările confirmate telefonic vor apărea aici, împreună cu detaliile mașinii și ale solicitării.</p>
+            <p>Programările confirmate telefonic vor apărea aici, împreună cu datele de contact și detaliile solicitării.</p>
           </div>
         </section>
       </div>
-      <footer>Conceput pentru service-uri auto independente din România.</footer>
+      <footer>Pam.ai · O primire atentă pentru fiecare client.</footer>
     </>
   );
 }
