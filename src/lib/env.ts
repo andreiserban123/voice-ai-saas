@@ -13,3 +13,29 @@ export function getDatabaseEnv() {
   }
   return result.data;
 }
+
+const authEnvSchema = z.object({
+  AUTH_SECRET: z.string().min(32),
+  AUTH_URL: z.url().refine((value) => {
+    const url = new URL(value);
+    return !url.username && !url.password && url.pathname === "/" && !url.search && !url.hash &&
+      (url.protocol === "https:" || (url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)));
+  }),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: z.coerce.number().int().min(1).max(65535),
+  SMTP_SECURE: z.enum(["true", "false"]).default("false"),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM: z.email(),
+});
+
+export function getAuthEnv() {
+  const result = authEnvSchema.safeParse(process.env);
+  if (!result.success) {
+    throw new Error("Configure AUTH_SECRET (at least 32 characters), AUTH_URL and SMTP settings; see .env.example.");
+  }
+  if (Boolean(result.data.SMTP_USER) !== Boolean(result.data.SMTP_PASSWORD)) {
+    throw new Error("Set both SMTP_USER and SMTP_PASSWORD, or neither for local mail.");
+  }
+  return result.data;
+}

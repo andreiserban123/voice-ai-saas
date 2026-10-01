@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean, check, foreignKey, index, integer, jsonb, pgEnum,
-  pgTable, primaryKey, text, time, timestamp, unique, uuid,
+  bigint, boolean, check, foreignKey, index, integer, jsonb, pgEnum,
+  pgTable, primaryKey, text, time, timestamp, unique, uniqueIndex, uuid,
 } from "drizzle-orm/pg-core";
 import type { Vehicle } from "@/lib/validation";
 
@@ -29,9 +29,60 @@ export const companies = pgTable("companies", {
 
 export const users = pgTable("users", {
   id: id(),
-  authSubject: text("auth_subject").notNull().unique(),
-  email: text("email").notNull(),
+  // Retained for compatibility with the initial schema; local auth uses id.
+  authSubject: text("auth_subject").unique(),
+  name: text("name").default("").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  image: text("image"),
   createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [uniqueIndex("users_email_normalized_unique").on(sql`lower(${table.email})`)]);
+
+export const authSessions = pgTable("auth_sessions", {
+  id: id(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [index("auth_sessions_user_idx").on(table.userId)]);
+
+export const authAccounts = pgTable("auth_accounts", {
+  id: id(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  accountId: text("account_id").notNull(),
+  providerId: text("provider_id").notNull(),
+  password: text("password"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  idToken: text("id_token"),
+  accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+  scope: text("scope"),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [
+  index("auth_accounts_user_idx").on(table.userId),
+  unique("auth_accounts_provider_unique").on(table.providerId, table.accountId),
+]);
+
+export const authVerifications = pgTable("auth_verifications", {
+  id: id(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (table) => [index("auth_verifications_identifier_idx").on(table.identifier)]);
+
+export const authRateLimits = pgTable("auth_rate_limits", {
+  id: id(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
 
 export const companyMemberships = pgTable("company_memberships", {

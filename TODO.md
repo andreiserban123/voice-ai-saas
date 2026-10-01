@@ -15,10 +15,14 @@ Scaffold verification on 2026-09-30: `npm ci`, lint, typecheck, production build
 
 - [x] Add local Docker Compose with `postgres:latest`, persistent storage and a health check.
 - [x] Apply migrations to development PostgreSQL and verify constraints against a real database.
-- [ ] Choose authentication, implement login and server-resolved company membership.
+- [x] Choose authentication, implement login and server-resolved company membership.
+- [x] Validate authentication against PostgreSQL and Chromium/Mailpit, including concurrent rate limits, session revocation and tenant isolation.
 - [ ] Implement tenant-scoped repositories and cross-tenant access tests.
 - [ ] Provision one demo garage, owner, opening hours, three FAQs, diagnostic service and agent configuration.
-- [ ] Add protected company reads and simple configuration editing.
+- [x] Add protected company reads.
+- [ ] Add simple company configuration editing.
+
+Authentication verification on 2026-10-01: migrations, lint, TypeScript, production build, all 12 authentication test results, all 8 database test results and the Chromium end-to-end flow passed. Local SMTP delivery was verified through Mailpit. Production SMTP and deployment still need validation in their target environment.
 
 ## 2 — Real call and FAQ slice
 

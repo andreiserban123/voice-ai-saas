@@ -12,6 +12,10 @@
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "db:up": "docker compose up -d --wait postgres",
+    "services:up": "docker compose --profile mail up -d --wait",
+    "services:down": "docker compose --profile mail down",
+    "auth:test": "node --conditions=react-server --import tsx --test scripts/auth.test.ts",
+    "auth:e2e": "playwright test",
     "db:down": "docker compose down",
     "db:test": "node --test scripts/db-smoke.test.mjs",
     "db:generate": "drizzle-kit generate",
@@ -19,9 +23,13 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.6",
     "@next/env": "16.3.7",
+    "@node-rs/argon2": "2.2.1",
+    "better-auth": "1.7.6",
     "drizzle-orm": "0.45.3",
     "next": "16.3.7",
+    "nodemailer": "10.0.13",
     "pg": "8.23.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -29,13 +37,16 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "22.20.4",
+    "@types/nodemailer": "8.0.2",
     "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "drizzle-kit": "0.31.11",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.7",
+    "tsx": "4.23.15",
     "typescript": "5.9.3"
   }
 }
